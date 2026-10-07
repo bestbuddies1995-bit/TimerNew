@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Sit/Stand – Woche 2</title>
+
+<style>
+    /* === Vollbild-Hintergrund über die ganze Seite === */
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        background: #0d0f2a;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        color: #dfe4ff;
+        font-family: Arial, sans-serif;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    h2 {
+        margin-bottom: 8px;
+        color: #e0e6ff;
+        font-weight: 600;
+    }
+
+    .timer {
+        margin: 4px 0;
+        font-size: 1.32em;
+        color: #cbd3ff;
+    }
+
+    /* === Settings-Zeile (flex-wrap verhindert überbreite Zeilen) === */
+    .settings-row {
+        margin: 10px 0;
+        font-size: 0.95em; 
+        color: #aab4ff;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        max-width: 95%;
+    }
+
+    .small-btn {
+        padding: 3px 6px;
+        margin: 0;
+        width: auto;
+        background: rgba(70, 80, 130, 0.45);
+        border: 1px solid rgba(130, 150, 255, 0.35);
+        color: #e4e6ff;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85em;
+        transition: 0.2s;
+    }
+
+    .small-btn:hover {
+        background: rgba(130, 150, 255, 0.25);
+    }
+
+    /* Rötlich schimmernde Reset-Buttons */
+    .reset-btn {
+        background: rgba(180, 70, 70, 0.4);
+        border: 1px solid rgba(255, 120, 120, 0.35);
+        color: #ffcccc;
+    }
+
+    .reset-btn:hover {
+        background: rgba(255, 120, 120, 0.25);
+        box-shadow: 0 0 10px rgba(255, 120, 120, 0.3);
+    }
+
+    /* === Buttons untereinander === */
+    .button-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 8px;
+        width: 100%;
+        max-width: 300px;
+    }
+
+    /* === Haupt-Buttons === */
+    button:not(.small-btn) {
+        padding: 12px 25px;
+        margin: 5px 0;
+        width: 100%;
+        background: rgba(70, 80, 130, 0.45);
+        border: 1px solid rgba(130, 150, 255, 0.35);
+        color: #e4e6ff;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.25s;
+        font-size: 1.26em;
+    }
+
+    button:not(.small-btn):hover {
+        background: rgba(130, 150, 255, 0.25);
+        box-shadow: 0 0 20px rgba(130, 150, 255, 0.45);
+    }
+
+    /* === ROTER BLINK-EFFEKT direkt auf dem Body === */
+    .blink-red {
+        animation: blinkRed 0.6s infinite alternate;
+    }
+
+    @keyframes blinkRed {
+        from { background-color: rgba(255, 0, 0, 0.20); }
+        to   { background-color: rgba(255, 0, 0, 0.65); }
+    }
+</style>
+</head>
+
+<body id="body">
+
+    <h2 id="status">Bereit</h2>
+
+    <div class="timer">Seit: <span id="seit">00:00</span></div>
+    <div class="timer">Erinnerung in: <span id="remind">--:--</span></div>
+
+    <div class="timer">Gesamt Sitzen: <span id="sitzen">00:00</span></div>
+    <div class="timer">Gesamt Stehen: <span id="stehen">00:00</span></div>
+
+    <!-- SETTINGS ZEILE MIT ZWEI RESET-BUTTONS -->
+    <div class="settings-row">
+        Sit: <span id="zielSitzen">25</span>m <button class="small-btn" onclick="changeSit(5)">+5</button> | 
+        Steh: <span id="zielStehen">35</span>m <button class="small-btn" onclick="changeStand(-5)">-5</button> |
+        <button class="small-btn reset-btn" onclick="resetToday()">Reset Tag</button>
+        <button class="small-btn reset-btn" onclick="resetAll()">Reset All</button>
+    </div>
+
+    <div class="button-container">
+        <button onclick="start()">Start / Fortsetzen</button>
+        <button onclick="stop()">Stop / Pause</button>
+        <button onclick="sitze()">Ich sitze jetzt</button>
+        <button onclick="stehe()">Ich stehe jetzt</button>
+    </div>
+
+<script>
+// Standard-Vorgaben definieren
+const DEFAULT_SITZEN = 25;
+const DEFAULT_STEHEN = 35;
+
+// Einstellungen aus dem Speicher laden
+let interval_sitzen_min = parseInt(localStorage.getItem("sitzen_min")) || DEFAULT_SITZEN;
+let interval_stehen_min = parseInt(localStorage.getItem("stehen_min")) || DEFAULT_STEHEN;
+
+let interval_sitzen_sec = interval_sitzen_min * 60;
+let interval_stehen_sec = interval_stehen_min * 60;
+
+// Variablen für den Laufzeit-Zustand
+let state = "Stehen";
+let running = false;
+let paused = false;
+
+let current_elapsed = 0;
+let total_sitzen = 0;
+let total_stehen = 0;
+let next_reminder = interval_stehen_sec;
+let last_ts = null;
+
+// --- SPEICHER-FUNKTION (Speichert ALLES) ---
+function saveState() {
+    localStorage.setItem("sit_stand_data", JSON.stringify({
+        state: state,
+        running: running,
+        current_elapsed: current_elapsed,
+        total_sitzen: total_sitzen,
+        total_stehen: total_stehen,
+        next_reminder: next_reminder,
+        last_saved_ts: Date.now() / 1000
+    }));
+}
+
+// --- LADE-FUNKTION (Lädt Zustand & rechnet Offline-Zeit dazu) ---
+function loadState() {
+    let data = localStorage.getItem("sit_stand_data");
+    if(data) {
+        try {
+            let parsed = JSON.parse(data);
+            state = parsed.state || "Stehen";
+            running = parsed.running || false;
+            current_elapsed = parsed.current_elapsed || 0;
+            total_sitzen = parsed.total_sitzen || 0;
+            total_stehen = parsed.total_stehen || 0;
+            
+            next_reminder = parsed.next_reminder || (state === "Sitzen" ? interval_sitzen_sec : interval_stehen_sec);
+            
+            let saved_ts = parsed.last_saved_ts || (Date.now() / 1000);
+            let diff = (Date.now() / 1000) - saved_ts;
+            
+            if (running && diff > 0) {
+                current_elapsed += diff;
+                if(state === "Sitzen") total_sitzen += diff;
+                else total_stehen += diff;
+            }
+        } catch(e) {
+            console.log("Fehler beim Laden der gespeicherten Daten.");
+        }
+    }
+}
+
+// --- INTERVALL-ÄNDERUNGEN SPEICHERN ---
+function changeSit(m) {
+    interval_sitzen_min += m;
+    interval_sitzen_sec = interval_sitzen_min * 60;
+    
+    localStorage.setItem("sitzen_min", interval_sitzen_min);
+    document.getElementById("zielSitzen").innerText = interval_sitzen_min;
+    
+    if(state === "Sitzen" && running) {
+        next_reminder += (m * 60);
+    }
+    updateDisplay();
+    saveState();
+}
+
+function changeStand(m) {
+    if(interval_stehen_min + m < 5) return; 
+    
+    interval_stehen_min += m;
+    interval_stehen_sec = interval_stehen_min * 60;
+    
+    localStorage.setItem("stehen_min", interval_stehen_min);
+    document.getElementById("zielStehen").innerText = interval_stehen_min;
+    
+    if(state === "Stehen" && running) {
+        next_reminder += (m * 60);
+    }
+    updateDisplay();
+    saveState();
+}
+
+// --- RESET FÜR DEN NEUEN TAG (Behält Intervalle) ---
+function resetToday() {
+    total_sitzen = 0;
+    total_stehen = 0;
+    current_elapsed = 0;
+    running = false; // Timer wird für den neuen Tag pausiert
+    last_ts = null;
+    next_reminder = state === "Sitzen" ? interval_sitzen_sec : interval_stehen_sec;
+    
+    stopBlink();
+    updateDisplay("Bereit (Tag genullt)");
+    saveState();
+}
+
+// --- RESET ALLES (Setzt Tag UND Intervalle auf Standard zurück) ---
+function resetAll() {
+    // Lokalen Speicher für Intervalle löschen
+    localStorage.removeItem("sitzen_min");
+    localStorage.removeItem("stehen_min");
+
+    // Variablen auf Standardwerte setzen
+    interval_sitzen_min = DEFAULT_SITZEN;
+    interval_stehen_min = DEFAULT_STEHEN;
+    interval_sitzen_sec = DEFAULT_SITZEN * 60;
+    interval_stehen_sec = DEFAULT_STEHEN * 60;
+
+    // Anzeige der Intervalle aktualisieren
+    document.getElementById("zielSitzen").innerText = interval_sitzen_min;
+    document.getElementById("zielStehen").innerText = interval_stehen_min;
+    
+    // Tag nullen aufrufen
+    resetToday();
+    updateDisplay("Bereit (Alles genullt)");
+}
+// -------------------------------------------------
+
+function fmtHMS(sec){
+  let s=Math.max(0,Math.round(sec));
+  let h=Math.floor(s/3600);
+  let m=Math.floor((s%3600)/60);
+  s=s%60;
+  return h?`${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`:`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
+
+function updateDisplay(msg){
+  document.getElementById("status").innerText = msg || `Jetzt: ${state}`;
+  document.getElementById("seit").innerText = fmtHMS(current_elapsed);
+  document.getElementById("remind").innerText = running ? fmtHMS(Math.max(0,next_reminder-current_elapsed)):"--:--";
+  document.getElementById("sitzen").innerText = fmtHMS(total_sitzen);
+  document.getElementById("stehen").innerText = fmtHMS(total_stehen);
+}
+
+let blinking = false;
+
+function triggerBlink() {
+    const body = document.getElementById("body");
+    body.classList.add("blink-red");
+    blinking = true;
+}
+
+function stopBlink() {
+    if(blinking){
+        const body = document.getElementById("body");
+        body.classList.remove("blink-red");
+        blinking = false;
+    }
+}
+
+let tick_count = 0;
+
+function tick(){
+  if(!running || paused) return;
+  let now = Date.now()/1000;
+  let elapsed = last_ts? Math.min(5, now-last_ts) : 0.2;
+  last_ts = now;
+
+  current_elapsed+=elapsed;
+  if(state==="Sitzen") total_sitzen+=elapsed;
+  else total_stehen+=elapsed;
+
+  let interval = state==="Sitzen"? interval_sitzen_sec : interval_stehen_sec;
+
+  while(current_elapsed >= next_reminder){
+    next_reminder += interval;
+    triggerBlink();
+    document.getElementById("status").innerText = `⚠️ Erinnerung: ${state}`;
+    setTimeout(()=>updateDisplay(),2000);
+  }
+  updateDisplay();
+  
+  tick_count++;
+  if(tick_count % 5 === 0) {
+      saveState();
+  }
+}
+
+setInterval(tick,200);
+
+function startWithState(s){
+  running=true; paused=false; state=s; current_elapsed=0;
+  next_reminder = state==="Sitzen"? interval_sitzen_sec : interval_stehen_sec;
+  last_ts = null;
+  updateDisplay(`Gestartet: ${state}`);
+  saveState();
+}
+
+function start(){
+    if(running) return; 
+    running=true; 
+    paused=false; 
+    last_ts=null; 
+    updateDisplay(`Gestartet: ${state}`);
+    saveState();
+}
+
+function stop(){
+    running=false; 
+    last_ts=null; 
+    updateDisplay("Gestoppt.");
+    saveState();
+}
+
+function sitze(){ 
+    if(!running){startWithState("Sitzen"); return;} 
+    stopBlink();
+    state="Sitzen"; 
+    current_elapsed=0; 
+    next_reminder=interval_sitzen_sec;
+    last_ts=null; 
+    updateDisplay(`Jetzt: ${state}`);
+    saveState();
+}
+
+function stehe(){ 
+    if(!running){startWithState("Stehen"); return;} 
+    stopBlink();
+    state="Stehen"; 
+    current_elapsed=0; 
+    next_reminder=interval_stehen_sec;
+    last_ts=null; 
+    updateDisplay(`Jetzt: ${state}`);
+    saveState();
+}
+
+// Initiale Anzeige der geladenen Werte sicherstellen
+loadState();
+document.getElementById("zielSitzen").innerText = interval_sitzen_min;
+document.getElementById("zielStehen").innerText = interval_stehen_min;
+
+if(running) {
+    updateDisplay(`Gestartet: ${state}`);
+} else if (current_elapsed > 0) {
+    updateDisplay(`Gestoppt (Letzter Stand: ${state})`);
+} else {
+    updateDisplay(`Bereit`);
+}
+</script>
+
+</body>
+</html>
