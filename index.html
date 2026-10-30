@@ -5,20 +5,17 @@
 <title>Sit/Stand – Woche 4</title>
 
 <style>
-    /* === Echtes iCUE-Hintergrundmuster der rechten Seite eingebunden === */
+    /* === Exakter Original-Hintergrund aus deinem Skript === */
     html, body {
         margin: 0;
         padding: 0;
         height: 100%;
         width: 100%;
         overflow: hidden;
-        /* Ausschnitt des echten Hintergrunds direkt im CSS hinterlegt */
-        background-color: #0b0b1e;
-        background-image: radial-gradient(circle at 80% 50%, rgba(30, 20, 70, 0.6), transparent 70%),
-                          linear-gradient(135deg, #090a1a 0%, #0d0e26 100%);
+        background: #0d0f2a;
         background-size: cover;
         background-repeat: no-repeat;
-        background-position: right center;
+        background-position: center;
         color: #dfe4ff;
         font-family: Arial, sans-serif;
 
@@ -33,14 +30,12 @@
         margin-bottom: 25px;
         color: #e0e6ff;
         font-weight: 600;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
     .timer {
         margin: 8px 0;
         font-size: 1.32em;
         color: #cbd3ff;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
     }
 
     /* === Buttons untereinander === */
@@ -65,7 +60,6 @@
         cursor: pointer;
         transition: 0.25s;
         font-size: 1.26em;
-        backdrop-filter: blur(4px);
     }
 
     button:hover {
@@ -75,12 +69,12 @@
 
     /* === ROTER BLINK-EFFEKT direkt auf dem Body === */
     .blink-red {
-        animation: blinkRed 0.6s infinite alternate;
+        animation: blinkRed 0.6s infinite alternate !important;
     }
 
     @keyframes blinkRed {
         from { background-color: rgba(255, 0, 0, 0.20); }
-        to   { background-color: rgba(255, 0, 0, 0.65); }
+        to   { background-color: rgba(255, 0, 0, 0.70); }
     }
 </style>
 </head>
@@ -115,22 +109,7 @@ let total_sitzen = 0;
 let total_stehen = 0;
 let next_reminder = INTERVAL_STEHEN;
 let last_ts = null;
-
-// URL-Speicher-Funktionen für Absturzsicherheit
-function saveToURL() {
-  const newURL = window.location.pathname + `?state=${encodeURIComponent(state)}&run=${running}&cur=${Math.round(current_elapsed)}&sit=${Math.round(total_sitzen)}&steh=${Math.round(total_stehen)}&rem=${Math.round(next_reminder)}`;
-  window.history.replaceState(null, '', newURL);
-}
-
-function loadFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  if(params.has('state')) state = params.get('state');
-  if(params.has('run')) running = params.get('run') === 'true';
-  if(params.has('cur')) current_elapsed = parseFloat(params.get('cur')) || 0;
-  if(params.has('sit')) total_sitzen = parseFloat(params.get('sit')) || 0;
-  if(params.has('steh')) total_stehen = parseFloat(params.get('steh')) || 0;
-  if(params.has('rem')) next_reminder = parseFloat(params.get('rem')) || (state === "Sitzen" ? INTERVAL_SITZEN : INTERVAL_STEHEN);
-}
+let blinking = false;
 
 function fmtHMS(sec){
   let s=Math.max(0,Math.round(sec));
@@ -141,25 +120,30 @@ function fmtHMS(sec){
 }
 
 function updateDisplay(msg){
-  document.getElementById("status").innerText = msg || `Jetzt: ${state}`;
+  document.getElementById("status").innerText = msg || (blinking ? `⚠️ Erinnerung: ${state}` : `Jetzt: ${state}`);
   document.getElementById("seit").innerText = fmtHMS(current_elapsed);
-  document.getElementById("remind").innerText = running ? fmtHMS(Math.max(0,next_reminder-current_elapsed)):"--:--";
+  
+  if (!running) {
+    document.getElementById("remind").innerText = "--:--";
+  } else {
+    let remain = next_reminder - current_elapsed;
+    document.getElementById("remind").innerText = remain <= 0 ? "00:00" : fmtHMS(remain);
+  }
+  
   document.getElementById("sitzen").innerText = fmtHMS(total_sitzen);
   document.getElementById("stehen").innerText = fmtHMS(total_stehen);
 }
 
-let blinking = false;
-
 function triggerBlink() {
-    const body = document.getElementById("body");
-    body.classList.add("blink-red");
-    blinking = true;
+    if(!blinking){
+        document.getElementById("body").classList.add("blink-red");
+        blinking = true;
+    }
 }
 
 function stopBlink() {
     if(blinking){
-        const body = document.getElementById("body");
-        body.classList.remove("blink-red");
+        document.getElementById("body").classList.remove("blink-red");
         blinking = false;
     }
 }
@@ -167,61 +151,63 @@ function stopBlink() {
 function tick(){
   if(!running || paused) return;
   let now = Date.now()/1000;
-  let elapsed = last_ts? Math.min(5, now-last_ts) : 0.2;
+  let elapsed = last_ts ? Math.min(5, now-last_ts) : 0.2;
   last_ts = now;
 
-  current_elapsed+=elapsed;
-  if(state==="Sitzen") total_sitzen+=elapsed;
-  else total_stehen+=elapsed;
+  current_elapsed += elapsed;
+  if(state === "Sitzen") total_sitzen += elapsed;
+  else total_stehen += elapsed;
 
-  let interval = state==="Sitzen"? INTERVAL_SITZEN: INTERVAL_STEHEN;
-
-  if(current_elapsed>=next_reminder){
-    next_reminder += interval;
+  // Wenn das Intervall abgelaufen ist: Blinken auslösen, aber Zeit normal weiterzählen lassen
+  if(current_elapsed >= next_reminder){
     triggerBlink();
-    document.getElementById("status").innerText = `⚠️ Erinnerung: ${state}`;
-    setTimeout(()=>updateDisplay(),2000);
   }
+  
   updateDisplay();
-  saveToURL();
 }
 
-setInterval(tick,200);
+setInterval(tick, 200);
 
 function startWithState(s){
-  running=true; paused=false; state=s; current_elapsed=0;
-  next_reminder = state==="Sitzen"? INTERVAL_SITZEN: INTERVAL_STEHEN;
+  stopBlink();
+  running = true; 
+  paused = false; 
+  state = s; 
+  current_elapsed = 0;
+  next_reminder = state === "Sitzen" ? INTERVAL_SITZEN : INTERVAL_STEHEN;
   last_ts = null;
   updateDisplay(`Gestartet: ${state}`);
-  saveToURL();
 }
 
-function start(){startWithState("Stehen");}
-function stop(){running=false; last_ts=null; updateDisplay("Gestoppt."); saveToURL();}
+function start(){ startWithState("Stehen"); }
+
+function stop(){ 
+  stopBlink(); 
+  running = false; 
+  last_ts = null; 
+  updateDisplay("Gestoppt."); 
+}
 
 function sitze(){ 
-    if(!running){startWithState("Sitzen"); return;} 
     stopBlink();
-    state="Sitzen"; 
-    current_elapsed=0; 
-    next_reminder=INTERVAL_SITZEN; 
-    last_ts=null; 
+    if(!running){ startWithState("Sitzen"); return; } 
+    state = "Sitzen"; 
+    current_elapsed = 0; 
+    next_reminder = INTERVAL_SITZEN; 
+    last_ts = null; 
     updateDisplay(`Jetzt: ${state}`);
-    saveToURL();
 }
 
 function stehe(){ 
-    if(!running){startWithState("Stehen"); return;} 
     stopBlink();
-    state="Stehen"; 
-    current_elapsed=0; 
-    next_reminder=INTERVAL_STEHEN; 
-    last_ts=null; 
+    if(!running){ startWithState("Stehen"); return; } 
+    state = "Stehen"; 
+    current_elapsed = 0; 
+    next_reminder = INTERVAL_STEHEN; 
+    last_ts = null; 
     updateDisplay(`Jetzt: ${state}`);
-    saveToURL();
 }
 
-loadFromURL();
 updateDisplay();
 </script>
 
