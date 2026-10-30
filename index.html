@@ -1,267 +1,223 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sit-Stand Timer</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #1e1e1e;
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-        .container {
-            text-align: center;
-            background: #2d2d2d;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            width: 280px;
-        }
-        h2 {
-            margin: 0 0 5px 0;
-            font-size: 16px;
-            color: #b0b0b0;
-        }
-        #timer {
-            font-size: 42px;
-            font-weight: bold;
-            margin: 10px 0;
-            color: #4CAF50;
-        }
-        .settings-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #222222;
-            padding: 6px 10px;
-            border-radius: 6px;
-            margin: 6px 0;
-            font-size: 13px;
-        }
-        .settings-row div {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .settings-row button {
-            background: #444;
-            color: white;
-            border: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        .settings-row button:hover {
-            background: #555;
-        }
-        .stats {
-            font-size: 13px;
-            margin: 10px 0;
-            color: #cccccc;
-            background: #222222;
-            padding: 6px;
-            border-radius: 6px;
-        }
-        .btn-container {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 10px;
-        }
-        button.main-btn {
-            padding: 8px 12px;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            border-radius: 6px;
-            background-color: #007acc;
-            color: white;
-            flex: 1;
-        }
-        button.main-btn:hover {
-            background-color: #005999;
-        }
-        button.reset-btn {
-            background-color: #d9534f;
-        }
-        button.reset-btn:hover {
-            background-color: #c9302c;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Sit/Stand – Woche 4</title>
+
+<style>
+    /* === Vollbild-Hintergrund über die ganze Seite === */
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        background: #0d0f2a; /* oder ein Bild: url(bg.jpg) */
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        color: #dfe4ff;
+        font-family: Arial, sans-serif;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    h2 {
+        margin-bottom: 25px;
+        color: #e0e6ff;
+        font-weight: 600;
+    }
+
+    .timer {
+        margin: 8px 0;
+        font-size: 1.32em;
+        color: #cbd3ff;
+    }
+
+    /* === Buttons untereinander === */
+    .button-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 30px;
+        width: 100%;
+        max-width: 300px;
+    }
+
+    /* === Buttons (30% kleiner als große Version) === */
+    button {
+        padding: 14px 25px;
+        margin: 10px 0;
+        width: 100%;
+        background: rgba(70, 80, 130, 0.45);
+        border: 1px solid rgba(130, 150, 255, 0.35);
+        color: #e4e6ff;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.25s;
+        font-size: 1.26em;
+    }
+
+    button:hover {
+        background: rgba(130, 150, 255, 0.25);
+        box-shadow: 0 0 20px rgba(130, 150, 255, 0.45);
+    }
+
+    /* === ROTER BLINK-EFFEKT direkt auf dem Body === */
+    .blink-red {
+        animation: blinkRed 0.6s infinite alternate;
+    }
+
+    @keyframes blinkRed {
+        from { background-color: rgba(255, 0, 0, 0.20); }
+        to   { background-color: rgba(255, 0, 0, 0.65); }
+    }
+</style>
 </head>
-<body>
 
-    <div class="container">
-        <h2 id="mode-text">Sitzen</h2>
-        <div id="timer">25:00</div>
-        
-        <div class="settings-row">
-            <span>Sitzen: <strong id="sit-time-label">25</strong>m</span>
-            <div>
-                <button onclick="changeInterval('sit', -5)">-</button>
-                <button onclick="changeInterval('sit', 5)">+</button>
-            </div>
-        </div>
+<body id="body">
 
-        <div class="settings-row">
-            <span>Stehen: <strong id="stand-time-label">15</strong>m</span>
-            <div>
-                <button onclick="changeInterval('stand', -5)">-</button>
-                <button onclick="changeInterval('stand', 5)">+</button>
-            </div>
-        </div>
+    <h2 id="status">Gestartet: Stehen</h2>
 
-        <div class="stats">
-            Gesessen: <span id="total-sit">0</span> Min | Gestanden: <span id="total-stand">0</span> Min
-        </div>
+    <div class="timer">Seit: <span id="seit">00:00</span></div>
+    <div class="timer">Erinnerung in: <span id="remind">--:--</span></div>
 
-        <div class="btn-container">
-            <button id="start-btn" class="main-btn" onclick="toggleTimer()">Start</button>
-            <button class="main-btn reset-btn" onclick="resetDay()">Reset Tag</button>
-            <button class="main-btn reset-btn" onclick="resetAll()">Reset All</button>
-        </div>
+    <div class="timer">Gesamt Sitzen: <span id="sitzen">00:00</span></div>
+    <div class="timer">Gesamt Stehen: <span id="stehen">00:00</span></div>
+
+    <div class="button-container">
+        <button onclick="start()">Start</button>
+        <button onclick="stop()">Stop</button>
+        <button onclick="sitze()">Ich sitze jetzt</button>
+        <button onclick="stehe()">Ich stehe jetzt</button>
     </div>
 
-    <script>
-        let sitDurationMinutes = 25;
-        let standDurationMinutes = 15;
+<script>
+const INTERVAL_SITZEN = 25 * 60; // 25 Minuten Sitzen
+const INTERVAL_STEHEN = 15 * 60; // 15 Minuten Stehen
 
-        let timeLeft = sitDurationMinutes * 60;
-        let isRunning = false;
-        let isSitting = true;
-        let timerId = null;
+let state = "Stehen";
+let running = false;
+let paused = false;
 
-        let totalSitSeconds = 0;
-        let totalStandSeconds = 0;
+let current_elapsed = 0;
+let total_sitzen = 0;
+let total_stehen = 0;
+let next_reminder = INTERVAL_STEHEN;
+let last_ts = null;
 
-        // Lädt den Zustand direkt aus der URL (verhindert Datenverlust bei iCUE-Abstürzen)
-        function loadFromURL() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.has('sitMin')) sitDurationMinutes = parseInt(params.get('sitMin'), 10) || 25;
-            if (params.has('standMin')) standDurationMinutes = parseInt(params.get('standMin'), 10) || 15;
-            if (params.has('totSit')) totalSitSeconds = parseInt(params.get('totSit'), 10) || 0;
-            if (params.has('totStand')) totalStandSeconds = parseInt(params.get('totStand'), 10) || 0;
-            if (params.has('sitting')) isSitting = params.get('sitting') === 'true';
-            
-            const currentIntervalMax = (isSitting ? sitDurationMinutes : standDurationMinutes) * 60;
-            if (params.has('left')) {
-                timeLeft = parseInt(params.get('left'), 10) || currentIntervalMax;
-            } else {
-                timeLeft = currentIntervalMax;
-            }
-            updateDisplay();
-        }
+// URL-Speicher-Funktionen für Absturzsicherheit
+function saveToURL() {
+  const newURL = window.location.pathname + `?state=${encodeURIComponent(state)}&run=${running}&cur=${Math.round(current_elapsed)}&sit=${Math.round(total_sitzen)}&steh=${Math.round(total_stehen)}&rem=${Math.round(next_reminder)}`;
+  window.history.replaceState(null, '', newURL);
+}
 
-        // Schreibt den aktuellen Stand unsichtbar in die URL fort
-        function saveToURL() {
-            const newURL = window.location.pathname + `?sitMin=${sitDurationMinutes}&standMin=${standDurationMinutes}&totSit=${totalSitSeconds}&totStand=${totalStandSeconds}&sitting=${isSitting}&left=${timeLeft}`;
-            window.history.replaceState(null, '', newURL);
-        }
+function loadFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  if(params.has('state')) state = params.get('state');
+  if(params.has('run')) running = params.get('run') === 'true';
+  if(params.has('cur')) current_elapsed = parseFloat(params.get('cur')) || 0;
+  if(params.has('sit')) total_sitzen = parseFloat(params.get('sit')) || 0;
+  if(params.has('steh')) total_stehen = parseFloat(params.get('steh')) || 0;
+  if(params.has('rem')) next_reminder = parseFloat(params.get('rem')) || (state === "Sitzen" ? INTERVAL_SITZEN : INTERVAL_STEHEN);
+}
 
-        function updateDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            document.getElementById('timer').innerText = 
-                `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+function fmtHMS(sec){
+  let s=Math.max(0,Math.round(sec));
+  let h=Math.floor(s/3600);
+  let m=Math.floor((s%3600)/60);
+  s=s%60;
+  return h?`${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`:`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
 
-            document.getElementById('sit-time-label').innerText = sitDurationMinutes;
-            document.getElementById('stand-time-label').innerText = standDurationMinutes;
+function updateDisplay(msg){
+  document.getElementById("status").innerText = msg || `Jetzt: ${state}`;
+  document.getElementById("seit").innerText = fmtHMS(current_elapsed);
+  document.getElementById("remind").innerText = running ? fmtHMS(Math.max(0,next_reminder-current_elapsed)):"--:--";
+  document.getElementById("sitzen").innerText = fmtHMS(total_sitzen);
+  document.getElementById("stehen").innerText = fmtHMS(total_stehen);
+}
 
-            const modeText = document.getElementById('mode-text');
-            const timerEl = document.getElementById('timer');
+let blinking = false;
 
-            if (isSitting) {
-                modeText.innerText = "Sitzen";
-                timerEl.style.color = "#4CAF50";
-            } else {
-                modeText.innerText = "Stehen";
-                timerEl.style.color = "#ff9800";
-            }
+function triggerBlink() {
+    const body = document.getElementById("body");
+    body.classList.add("blink-red");
+    blinking = true;
+}
 
-            document.getElementById('total-sit').innerText = Math.floor(totalSitSeconds / 60);
-            document.getElementById('total-stand').innerText = Math.floor(totalStandSeconds / 60);
-        }
+function stopBlink() {
+    if(blinking){
+        const body = document.getElementById("body");
+        body.classList.remove("blink-red");
+        blinking = false;
+    }
+}
 
-        function toggleTimer() {
-            const btn = document.getElementById('start-btn');
-            if (isRunning) {
-                clearInterval(timerId);
-                isRunning = false;
-                btn.innerText = "Start";
-            } else {
-                isRunning = true;
-                btn.innerText = "Pause";
-                timerId = setInterval(tick, 1000);
-            }
-            saveToURL();
-        }
+function tick(){
+  if(!running || paused) return;
+  let now = Date.now()/1000;
+  let elapsed = last_ts? Math.min(5, now-last_ts) : 0.2;
+  last_ts = now;
 
-        function tick() {
-            if (timeLeft > 0) {
-                timeLeft--;
-                if (isSitting) {
-                    totalSitSeconds++;
-                } else {
-                    totalStandSeconds++;
-                }
-            } else {
-                isSitting = !isSitting;
-                timeLeft = (isSitting ? sitDurationMinutes : standDurationMinutes) * 60;
-            }
-            updateDisplay();
-            saveToURL();
-        }
+  current_elapsed+=elapsed;
+  if(state==="Sitzen") total_sitzen+=elapsed;
+  else total_stehen+=elapsed;
 
-        function changeInterval(type, amount) {
-            if (type === 'sit') {
-                sitDurationMinutes = Math.max(5, sitDurationMinutes + amount);
-                if (isSitting && !isRunning) {
-                    timeLeft = sitDurationMinutes * 60;
-                }
-            } else {
-                standDurationMinutes = Math.max(5, standDurationMinutes + amount);
-                if (!isSitting && !isRunning) {
-                    timeLeft = standDurationMinutes * 60;
-                }
-            }
-            updateDisplay();
-            saveToURL();
-        }
+  let interval = state==="Sitzen"? INTERVAL_SITZEN: INTERVAL_STEHEN;
 
-        function resetDay() {
-            if (isRunning) toggleTimer();
-            totalSitSeconds = 0;
-            totalStandSeconds = 0;
-            isSitting = true;
-            timeLeft = sitDurationMinutes * 60;
-            updateDisplay();
-            saveToURL();
-        }
+  if(current_elapsed>=next_reminder){
+    next_reminder += interval;
+    triggerBlink();
+    document.getElementById("status").innerText = `⚠️ Erinnerung: ${state}`;
+    setTimeout(()=>updateDisplay(),2000);
+  }
+  updateDisplay();
+  saveToURL();
+}
 
-        function resetAll() {
-            if (isRunning) toggleTimer();
-            sitDurationMinutes = 25;
-            standDurationMinutes = 15;
-            totalSitSeconds = 0;
-            totalStandSeconds = 0;
-            isSitting = true;
-            timeLeft = sitDurationMinutes * 60;
-            updateDisplay();
-            saveToURL();
-        }
+setInterval(tick,200);
 
-        loadFromURL();
-    </script>
+function startWithState(s){
+  running=true; paused=false; state=s; current_elapsed=0;
+  next_reminder = state==="Sitzen"? INTERVAL_SITZEN: INTERVAL_STEHEN;
+  last_ts = null;
+  updateDisplay(`Gestartet: ${state}`);
+  saveToURL();
+}
+
+function start(){startWithState("Stehen");}
+function stop(){running=false; last_ts=null; updateDisplay("Gestoppt."); saveToURL();}
+
+function sitze(){ 
+    if(!running){startWithState("Sitzen"); return;} 
+    stopBlink();
+    state="Sitzen"; 
+    current_elapsed=0; 
+    next_reminder=INTERVAL_SITZEN; 
+    last_ts=null; 
+    updateDisplay(`Jetzt: ${state}`);
+    saveToURL();
+}
+
+function stehe(){ 
+    if(!running){startWithState("Stehen"); return;} 
+    stopBlink();
+    state="Stehen"; 
+    current_elapsed=0; 
+    next_reminder=INTERVAL_STEHEN; 
+    last_ts=null; 
+    updateDisplay(`Jetzt: ${state}`);
+    saveToURL();
+}
+
+loadFromURL();
+updateDisplay();
+</script>
+
 </body>
 </html>
