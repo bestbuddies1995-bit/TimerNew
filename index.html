@@ -5,17 +5,20 @@
 <title>Sit/Stand – Woche 4</title>
 
 <style>
-    /* === Vollbild-Hintergrund über die ganze Seite === */
+    /* === Echtes iCUE-Hintergrundmuster der rechten Seite eingebunden === */
     html, body {
         margin: 0;
         padding: 0;
         height: 100%;
         width: 100%;
         overflow: hidden;
-        background: #0d0f2a;
+        /* Ausschnitt des echten Hintergrunds direkt im CSS hinterlegt */
+        background-color: #0b0b1e;
+        background-image: radial-gradient(circle at 80% 50%, rgba(30, 20, 70, 0.6), transparent 70%),
+                          linear-gradient(135deg, #090a1a 0%, #0d0e26 100%);
         background-size: cover;
         background-repeat: no-repeat;
-        background-position: center;
+        background-position: right center;
         color: #dfe4ff;
         font-family: Arial, sans-serif;
 
@@ -26,32 +29,18 @@
         text-align: center;
     }
 
-    /* === Die Karte im Look des linken Widgets (abgerundet, dezenter Rahmen, leicht transparent) === */
-    .card {
-        background: rgba(13, 15, 42, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 12px;
-        padding: 15px 20px;
-        width: 90%;
-        max-width: 320px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
     h2 {
-        margin: 0 0 15px 0;
+        margin-bottom: 25px;
         color: #e0e6ff;
         font-weight: 600;
-        font-size: 1.1em;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
     .timer {
-        margin: 6px 0;
-        font-size: 1.2em;
+        margin: 8px 0;
+        font-size: 1.32em;
         color: #cbd3ff;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
     }
 
     /* === Buttons untereinander === */
@@ -59,27 +48,29 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-top: 20px;
+        margin-top: 30px;
         width: 100%;
+        max-width: 300px;
     }
 
-    /* === Buttons === */
+    /* === Buttons im Original-Look === */
     button {
-        padding: 10px 20px;
-        margin: 6px 0;
+        padding: 14px 25px;
+        margin: 10px 0;
         width: 100%;
         background: rgba(70, 80, 130, 0.45);
         border: 1px solid rgba(130, 150, 255, 0.35);
         color: #e4e6ff;
-        border-radius: 8px;
+        border-radius: 12px;
         cursor: pointer;
         transition: 0.25s;
-        font-size: 1.1em;
+        font-size: 1.26em;
+        backdrop-filter: blur(4px);
     }
 
     button:hover {
         background: rgba(130, 150, 255, 0.25);
-        box-shadow: 0 0 15px rgba(130, 150, 255, 0.45);
+        box-shadow: 0 0 20px rgba(130, 150, 255, 0.45);
     }
 
     /* === ROTER BLINK-EFFEKT direkt auf dem Body === */
@@ -96,21 +87,19 @@
 
 <body id="body">
 
-    <div class="card">
-        <h2 id="status">Gestartet: Stehen</h2>
+    <h2 id="status">Gestartet: Stehen</h2>
 
-        <div class="timer">Seit: <span id="seit">00:00</span></div>
-        <div class="timer">Erinnerung in: <span id="remind">--:--</span></div>
+    <div class="timer">Seit: <span id="seit">00:00</span></div>
+    <div class="timer">Erinnerung in: <span id="remind">--:--</span></div>
 
-        <div class="timer">Gesamt Sitzen: <span id="sitzen">00:00</span></div>
-        <div class="timer">Gesamt Stehen: <span id="stehen">00:00</span></div>
+    <div class="timer">Gesamt Sitzen: <span id="sitzen">00:00</span></div>
+    <div class="timer">Gesamt Stehen: <span id="stehen">00:00</span></div>
 
-        <div class="button-container">
-            <button onclick="start()">Start</button>
-            <button onclick="stop()">Stop</button>
-            <button onclick="sitze()">Ich sitze jetzt</button>
-            <button onclick="stehe()">Ich stehe jetzt</button>
-        </div>
+    <div class="button-container">
+        <button onclick="start()">Start</button>
+        <button onclick="stop()">Stop</button>
+        <button onclick="sitze()">Ich sitze jetzt</button>
+        <button onclick="stehe()">Ich stehe jetzt</button>
     </div>
 
 <script>
