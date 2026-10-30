@@ -1,201 +1,267 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Sit/Stand Timer</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      background-color: #121212;
-      color: #FFFFFF;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      padding: 10px;
-      user-select: none;
-    }
-    .card {
-      background: #1E1E1E;
-      border-radius: 12px;
-      padding: 15px;
-      width: 100%;
-      max-width: 320px;
-      text-align: center;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    }
-    .status {
-      font-size: 1.2rem;
-      font-weight: bold;
-      margin-bottom: 5px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .status.sitzen { color: #4CAF50; }
-    .status.stehen { color: #FF9800; }
-    
-    .timer-display {
-      font-size: 2.8rem;
-      font-weight: bold;
-      font-family: monospace;
-      margin: 10px 0;
-    }
-    .stats {
-      font-size: 0.85rem;
-      color: #AAAAAA;
-      margin-bottom: 15px;
-      display: flex;
-      justify-content: space-around;
-      border-top: 1px solid #333;
-      border-bottom: 1px solid #333;
-      padding: 8px 0;
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-    button {
-      background: #333333;
-      color: #FFF;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    button:hover {
-      background: #444444;
-    }
-    button.primary {
-      background: #007ACC;
-    }
-    button.primary:hover {
-      background: #005999;
-    }
-    button.danger {
-      background: #D32F2F;
-    }
-    button.danger:hover {
-      background: #9A0007;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sit-Stand Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            width: 280px;
+        }
+        h2 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: #b0b0b0;
+        }
+        #timer {
+            font-size: 42px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #4CAF50;
+        }
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222222;
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin: 6px 0;
+            font-size: 13px;
+        }
+        .settings-row div {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .settings-row button {
+            background: #444;
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .settings-row button:hover {
+            background: #555;
+        }
+        .stats {
+            font-size: 13px;
+            margin: 10px 0;
+            color: #cccccc;
+            background: #222222;
+            padding: 6px;
+            border-radius: 6px;
+        }
+        .btn-container {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        button.main-btn {
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            background-color: #007acc;
+            color: white;
+            flex: 1;
+        }
+        button.main-btn:hover {
+            background-color: #005999;
+        }
+        button.reset-btn {
+            background-color: #d9534f;
+        }
+        button.reset-btn:hover {
+            background-color: #c9302c;
+        }
+    </style>
 </head>
 <body>
 
-  <div class="card">
-    <div id="status" class="status sitzen">Sitzen</div>
-    <div id="timer" class="timer-display">25:00</div>
+    <div class="container">
+        <h2 id="mode-text">Sitzen</h2>
+        <div id="timer">25:00</div>
+        
+        <div class="settings-row">
+            <span>Sitzen: <strong id="sit-time-label">25</strong>m</span>
+            <div>
+                <button onclick="changeInterval('sit', -5)">-</button>
+                <button onclick="changeInterval('sit', 5)">+</button>
+            </div>
+        </div>
 
-    <div class="stats">
-      <div>Heute gesessen:<br><strong id="total-sit">0m</strong></div>
-      <div>Heute gestanden:<br><strong id="total-stand">0m</strong></div>
+        <div class="settings-row">
+            <span>Stehen: <strong id="stand-time-label">15</strong>m</span>
+            <div>
+                <button onclick="changeInterval('stand', -5)">-</button>
+                <button onclick="changeInterval('stand', 5)">+</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            Gesessen: <span id="total-sit">0</span> Min | Gestanden: <span id="total-stand">0</span> Min
+        </div>
+
+        <div class="btn-container">
+            <button id="start-btn" class="main-btn" onclick="toggleTimer()">Start</button>
+            <button class="main-btn reset-btn" onclick="resetDay()">Reset Tag</button>
+            <button class="main-btn reset-btn" onclick="resetAll()">Reset All</button>
+        </div>
     </div>
 
-    <div class="controls">
-      <button id="toggle-btn" class="primary" onclick="toggleTimer()">Start</button>
-      <button class="danger" onclick="resetDay()">Reset Tag</button>
-    </div>
-  </div>
+    <script>
+        let sitDurationMinutes = 25;
+        let standDurationMinutes = 15;
 
-  <script>
-    // Feste Intervall-Zeiten in Sekunden
-    const SIT_DURATION = 25 * 60; // 25 Minuten Sitzen
-    const STAND_DURATION = 15 * 60; // 15 Minuten Stehen
+        let timeLeft = sitDurationMinutes * 60;
+        let isRunning = false;
+        let isSitting = true;
+        let timerId = null;
 
-    let mode = 'sitzen'; // 'sitzen' oder 'stehen'
-    let timeLeft = SIT_DURATION;
-    let isRunning = false;
-    let timerInterval = null;
+        let totalSitSeconds = 0;
+        let totalStandSeconds = 0;
 
-    let totalSitSeconds = 0;
-    let totalStandSeconds = 0;
-
-    // URL-Parameter lesen (Crash-Schutz für iCUE)
-    function loadFromURL() {
-      const params = new URLSearchParams(window.location.search);
-      if (params.has('sit')) totalSitSeconds = parseInt(params.get('sit'), 10) || 0;
-      if (params.has('stand')) totalStandSeconds = parseInt(params.get('stand'), 10) || 0;
-      if (params.has('mode')) mode = params.get('mode') || 'sitzen';
-      if (params.has('left')) timeLeft = parseInt(params.get('left'), 10) || (mode === 'sitzen' ? SIT_DURATION : STAND_DURATION);
-      updateDisplay();
-    }
-
-    // Aktuellen Stand geräuschlos in der URL sichern
-    function saveToURL() {
-      const newURL = window.location.pathname + `?sit=${totalSitSeconds}&stand=${totalStandSeconds}&mode=${mode}&left=${timeLeft}`;
-      window.history.replaceState(null, '', newURL);
-    }
-
-    function updateDisplay() {
-      const minutes = Math.floor(timeLeft / 60);
-      const seconds = timeLeft % 60;
-      document.getElementById('timer').innerText = 
-        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-
-      const statusEl = document.getElementById('status');
-      statusEl.innerText = mode;
-      statusEl.className = `status ${mode}`;
-
-      document.getElementById('total-sit').innerText = `${Math.floor(totalSitSeconds / 60)}m`;
-      document.getElementById('total-stand').innerText = `${Math.floor(totalStandSeconds / 60)}m`;
-    }
-
-    function toggleTimer() {
-      const btn = document.getElementById('toggle-btn');
-      if (isRunning) {
-        clearInterval(timerInterval);
-        isRunning = false;
-        btn.innerText = 'Start';
-      } else {
-        isRunning = true;
-        btn.innerText = 'Pause';
-        timerInterval = setInterval(tick, 1000);
-      }
-      saveToURL();
-    }
-
-    function tick() {
-      if (timeLeft > 0) {
-        timeLeft--;
-        if (mode === 'sitzen') {
-          totalSitSeconds++;
-        } else {
-          totalStandSeconds++;
+        // Lädt den Zustand direkt aus der URL (verhindert Datenverlust bei iCUE-Abstürzen)
+        function loadFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('sitMin')) sitDurationMinutes = parseInt(params.get('sitMin'), 10) || 25;
+            if (params.has('standMin')) standDurationMinutes = parseInt(params.get('standMin'), 10) || 15;
+            if (params.has('totSit')) totalSitSeconds = parseInt(params.get('totSit'), 10) || 0;
+            if (params.has('totStand')) totalStandSeconds = parseInt(params.get('totStand'), 10) || 0;
+            if (params.has('sitting')) isSitting = params.get('sitting') === 'true';
+            
+            const currentIntervalMax = (isSitting ? sitDurationMinutes : standDurationMinutes) * 60;
+            if (params.has('left')) {
+                timeLeft = parseInt(params.get('left'), 10) || currentIntervalMax;
+            } else {
+                timeLeft = currentIntervalMax;
+            }
+            updateDisplay();
         }
-      } else {
-        // Wechsel zwischen Sitzen und Stehen
-        if (mode === 'sitzen') {
-          mode = 'stehen';
-          timeLeft = STAND_DURATION;
-        } else {
-          mode = 'sitzen';
-          timeLeft = SIT_DURATION;
+
+        // Schreibt den aktuellen Stand unsichtbar in die URL fort
+        function saveToURL() {
+            const newURL = window.location.pathname + `?sitMin=${sitDurationMinutes}&standMin=${standDurationMinutes}&totSit=${totalSitSeconds}&totStand=${totalStandSeconds}&sitting=${isSitting}&left=${timeLeft}`;
+            window.history.replaceState(null, '', newURL);
         }
-      }
-      updateDisplay();
-      saveToURL();
-    }
 
-    function resetDay() {
-      if (isRunning) toggleTimer();
-      totalSitSeconds = 0;
-      totalStandSeconds = 0;
-      mode = 'sitzen';
-      timeLeft = SIT_DURATION;
-      updateDisplay();
-      saveToURL();
-    }
+        function updateDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').innerText = 
+                `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 
-    // Beim Starten Zustand laden
-    loadFromURL();
-  </script>
+            document.getElementById('sit-time-label').innerText = sitDurationMinutes;
+            document.getElementById('stand-time-label').innerText = standDurationMinutes;
+
+            const modeText = document.getElementById('mode-text');
+            const timerEl = document.getElementById('timer');
+
+            if (isSitting) {
+                modeText.innerText = "Sitzen";
+                timerEl.style.color = "#4CAF50";
+            } else {
+                modeText.innerText = "Stehen";
+                timerEl.style.color = "#ff9800";
+            }
+
+            document.getElementById('total-sit').innerText = Math.floor(totalSitSeconds / 60);
+            document.getElementById('total-stand').innerText = Math.floor(totalStandSeconds / 60);
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('start-btn');
+            if (isRunning) {
+                clearInterval(timerId);
+                isRunning = false;
+                btn.innerText = "Start";
+            } else {
+                isRunning = true;
+                btn.innerText = "Pause";
+                timerId = setInterval(tick, 1000);
+            }
+            saveToURL();
+        }
+
+        function tick() {
+            if (timeLeft > 0) {
+                timeLeft--;
+                if (isSitting) {
+                    totalSitSeconds++;
+                } else {
+                    totalStandSeconds++;
+                }
+            } else {
+                isSitting = !isSitting;
+                timeLeft = (isSitting ? sitDurationMinutes : standDurationMinutes) * 60;
+            }
+            updateDisplay();
+            saveToURL();
+        }
+
+        function changeInterval(type, amount) {
+            if (type === 'sit') {
+                sitDurationMinutes = Math.max(5, sitDurationMinutes + amount);
+                if (isSitting && !isRunning) {
+                    timeLeft = sitDurationMinutes * 60;
+                }
+            } else {
+                standDurationMinutes = Math.max(5, standDurationMinutes + amount);
+                if (!isSitting && !isRunning) {
+                    timeLeft = standDurationMinutes * 60;
+                }
+            }
+            updateDisplay();
+            saveToURL();
+        }
+
+        function resetDay() {
+            if (isRunning) toggleTimer();
+            totalSitSeconds = 0;
+            totalStandSeconds = 0;
+            isSitting = true;
+            timeLeft = sitDurationMinutes * 60;
+            updateDisplay();
+            saveToURL();
+        }
+
+        function resetAll() {
+            if (isRunning) toggleTimer();
+            sitDurationMinutes = 25;
+            standDurationMinutes = 15;
+            totalSitSeconds = 0;
+            totalStandSeconds = 0;
+            isSitting = true;
+            timeLeft = sitDurationMinutes * 60;
+            updateDisplay();
+            saveToURL();
+        }
+
+        loadFromURL();
+    </script>
 </body>
 </html>
